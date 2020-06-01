@@ -8,14 +8,16 @@ var KEY_ENTER = 13,
     ctx = null,
     lastPress = null,
     pause = true,
+    gameover = true,
     dlr = 0,
     score = 0,
+    wall = new Array(),
     player = null,
     food = null;
 
 window.requestAnimationFrame = (function () {
     return window.requestAnimationFrame ||
-        window.mozRequestAnimanitionFrame ||
+        window.mozRequestAnimationFrame ||
         window.webkitCancelAnimationFrame ||
         function (callback) {
             window.setTimeout(callback, 17);
@@ -33,7 +35,7 @@ function Rectangle(x, y, width, height) {
     this.height = (height == null) ? this.width : height;
 
     this.inersects = function (rect) {
-        if (rect = null) {
+        if (rect == null) {
             window.console.warn('Missing parameters on function intersects');
         } else {
             return (this.x < rect.x + rect.width &&
@@ -56,12 +58,30 @@ function ramdom(max) {
     return Math.floor(Math.random() * max);
 }
 
+function reset() {
+    score = 0;
+    dlr = 1;
+    player.x = 40;
+    player.y = 40;
+    food.x = ramdom(canvas.width / 10 - 1) * 10;
+    food.y = ramdom(canvas.height / 10 - 1) * 10;
+    gameover = false;
+}
+
 function paint(ctx) {
+    var i = 0,
+        l = 0;
+
     ctx.fillStyle = '#000';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
     ctx.fillStyle = '#0f0';
     player.fill(ctx);
+
+    ctx.fillStyle = '#999';
+    for (i = 0, l = wall.length; i < l; i += 1) {
+        wall[i].fill(ctx);
+    }
 
     ctx.fillStyle = 'f00';
     food.fill(ctx);
@@ -72,14 +92,24 @@ function paint(ctx) {
 
     if (pause) {
         ctx.textAlign = 'center';
-        ctx.fillText('PAUSE', 150, 75);
+        if (gameover) {
+            ctx.fillText('GAME OVER', 150, 75);
+        } else {
+            ctx.fillText('PAUSE', 150, 75);
+        }
         ctx.textAlign = 'left';
     }
 
 };
 
 function act() {
+    var i,
+        l;
+
     if (!pause) {
+        if (gameover) {
+            reset();
+        }
         if (lastPress == KEY_UP) {
             dir = 0;
         }
@@ -126,6 +156,17 @@ function act() {
             food.y = ramdom(canvas.height / 10 - 1) * 10;
         }
 
+        for (i = 0, l = wall.length; i < l; i += 1) {
+            if (food.inersects(wall[i])) {
+                food.x = ramdom(canvas.width / 10 - 1) * 10;
+                food.y = ramdom(canvas.height / 10 - 1) * 10;
+            }
+        }
+
+        if (player.inersects(wall[i])) {
+            gameover = true;
+            pause = true;
+        }
     }
 
     if (lastPress == KEY_ENTER) {
@@ -153,6 +194,10 @@ function init() {
     player = new Rectangle(40, 40, 10, 10);
     food = new Rectangle(80, 80, 10, 10);
 
+    wall.push(new Rectangle(100, 50, 10, 10));
+    wall.push(new Rectangle(100, 100, 10, 10));
+    wall.push(new Rectangle(200, 50, 10, 10));
+    wall.push(new Rectangle(200, 100, 10, 10));
 
     run();
     repaint();
